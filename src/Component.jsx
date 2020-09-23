@@ -8,10 +8,12 @@ import {
   Col,
   Popover,
   Input,
-  Avatar,
+  message,
+  Avatar
 } from "antd";
 import * as AllIcons from "@ant-design/icons";
 import { Router, Link } from "react-router-dom";
+import Fetch from "igroot-fetch";
 import createHashHistory from "history/createHashHistory";
 import PropTypes from "prop-types";
 import { getLocalStorage, toggleFullScreen, setLocalStorage } from "./function";
@@ -19,26 +21,28 @@ import "./index.scss";
 
 const { SubMenu, Item } = Menu;
 const { Header, Content, Sider, Footer } = Layout;
+const duration = 300
 // const AllIcons = {};
 export class FrameLayout extends React.Component {
   constructor(props) {
     super(props);
 
     this.hashHistory = this.getHistory();
-    this.menus = this.getMenu();
-
     this.state = {
+      menus: [],
       selectedKeys: [],
       openKeys: [],
       collapsed: false,
       displaySearchApp: false,
-      inputSearchValue: "",
+      inputSearchValue: ""
     };
   }
 
-  componentDidMount() {
+  async componentDidMount() {
+    this.setState({
+      menus: await this.getMenu()
+    })
     this.GoBackToPrePage();
-
     this.listenHistory();
 
     const menuPathCorrectted = this.correctMenuPath(window.location.hash);
@@ -53,7 +57,7 @@ export class FrameLayout extends React.Component {
       this.setState(
         {
           openKeys: [openKey],
-          selectedKeys: [selectedMenu.key],
+          selectedKeys: [selectedMenu.key]
         },
         () =>
           this.log(
@@ -70,26 +74,27 @@ export class FrameLayout extends React.Component {
     }
   }
 
+
   // 监听浏览器地址栏变化，并联动菜单的选中状态
   listenHistory = () => {
     this.log("hashHistory开始监听！");
-    this.hashHistory.listen((location) => {
+    this.hashHistory.listen(location => {
       this.log("hashHistory.listen（pathname）：", location.pathname);
 
       if (location.pathname !== "/") {
         let currentMenu = this.searchMenuByPath(
-          this.menus,
+          this.state.menus,
           this.correctMenuPath(window.location.hash)
         );
         this.log("currentMenu", currentMenu);
         if (!!currentMenu) {
-          let parentMenu = this.searchParentMenu(currentMenu, this.menus);
+          let parentMenu = this.searchParentMenu(currentMenu, this.state.menus);
           this.log("parentMenu", parentMenu);
           document.title = this.props.appName + "-" + currentMenu.name;
           this.log(
             !!currentMenu &&
-              !!parentMenu &&
-              currentMenu.key !== this.state.selectedKeys[0]
+            !!parentMenu &&
+            currentMenu.key !== this.state.selectedKeys[0]
           );
           if (!!parentMenu && currentMenu.key !== this.state.selectedKeys[0]) {
             let newOpenKeys = [parentMenu.key];
@@ -98,7 +103,7 @@ export class FrameLayout extends React.Component {
             }
             this.setState({
               selectedKeys: [currentMenu.key],
-              openKeys: newOpenKeys,
+              openKeys: newOpenKeys
             });
           }
         }
@@ -118,7 +123,7 @@ export class FrameLayout extends React.Component {
           collapsible
           collapsed={collapsed}
           width={width}
-          // {...this.props}
+        // {...this.props}
         >
           {this.renderLogo()}
           <Menu
@@ -137,13 +142,13 @@ export class FrameLayout extends React.Component {
           <Header className="header">
             {collapsed
               ? React.createElement(AllIcons["MenuFoldOutlined"], {
-                  onClick: this.onCollapse,
-                  className: "trigger",
-                })
+                onClick: this.onCollapse,
+                className: "trigger"
+              })
               : React.createElement(AllIcons["MenuUnfoldOutlined"], {
-                  onClick: this.onCollapse,
-                  className: "trigger",
-                })}
+                onClick: this.onCollapse,
+                className: "trigger"
+              })}
             <span
               style={{
                 display: "inline-block",
@@ -151,7 +156,7 @@ export class FrameLayout extends React.Component {
                 height: "100%",
                 cursor: "pointer",
                 marginRight: 15,
-                fontSize: 16,
+                fontSize: 16
               }}
             >
               {this.renderAppLink()}
@@ -177,7 +182,7 @@ export class FrameLayout extends React.Component {
           collapsed={collapsed}
           onCollapse={this.onCollapse}
           width={width}
-          // {...this.props}
+        // {...this.props}
         >
           {this.renderLogo()}
           <div className="sider-user-area">
@@ -226,7 +231,7 @@ export class FrameLayout extends React.Component {
               height: "100%",
               cursor: "pointer",
               fontSize: 16,
-              color: "#fff",
+              color: "#fff"
             }}
           >
             {this.renderAppLink()}
@@ -245,35 +250,36 @@ export class FrameLayout extends React.Component {
       ) : mode === "sider" ? (
         siderContainer
       ) : (
-        headerContainer
-      )
+            headerContainer
+          )
     ) : (
-      <Router history={this.hashHistory}>
-        {mode === "sider+header"
-          ? siderHeaderContainer
-          : mode === "sider"
-          ? siderContainer
-          : headerContainer}
-      </Router>
-    );
+        <Router history={this.hashHistory}>
+          {mode === "sider+header"
+            ? siderHeaderContainer
+            : mode === "sider"
+              ? siderContainer
+              : headerContainer}
+        </Router>
+      );
   }
 
   // 处理父级菜单展开
-  handleOpenChange = (openKeys) => {
+  handleOpenChange = openKeys => {
     let newOpenKeys = [openKeys[openKeys.length - 1]];
     if (this.props.allowExpandMultiMenus) {
       newOpenKeys = [...openKeys];
     }
 
     this.setState({
-      openKeys: newOpenKeys,
+      openKeys: newOpenKeys
     });
   };
 
   // 渲染菜单
   renderMenu = () => {
-    if (this.props.fromApi) this.menus = this.props.menus;
-    return this.menus.map((item) => {
+    const { menus } = this.state
+    // if (this.props.fromApi) this.state.menus = this.props.menus;
+    return menus && menus.map(item => {
       // debugger
       const IconType = AllIcons[item.iconType]
         ? React.createElement(AllIcons[item.iconType], {})
@@ -298,7 +304,7 @@ export class FrameLayout extends React.Component {
               </span>
             }
           >
-            {item.subs.map((sub) => (
+            {item.subs.map(sub => (
               <Item key={sub.key}>
                 <Link to={sub.to}>
                   {/* {sub.iconType
@@ -320,13 +326,157 @@ export class FrameLayout extends React.Component {
   };
 
   // 获取菜单数据
-  getMenu = () => {
-    const { menus } = this.props;
-    let menuDatas = menus || getLocalStorage("menu");
-    menuDatas = this.correctMenus(menuDatas);
-    this.log("menus", menuDatas);
-    return menuDatas;
+  getMenu = async () => {
+    const { menus, openAuth, sysId, authUrl } = this.props;
+    let menuDatas = []
+    let authSwitch = false
+    if (openAuth) {
+      if (!sysId) { message.error("开启权限控制 但未输入sysId参数"); return [] }
+      if (!authUrl) { message.error("开启权限控制 但未输入authUrl参数"); return [] }
+
+      authSwitch = localStorage.getItem("authSwitch")
+      if (authSwitch == null) {
+        authSwitch = await this.getAuthSwitch(authUrl)
+        menuDatas = await this.handleMenuAuth(authUrl, sysId)
+      } else if (!!authSwitch == true) {
+        menuDatas = await this.handleMenuAuth(authUrl, sysId)
+      }
+    }
+    menuDatas = this.correctMenus(!!authSwitch == true ? menuDatas : menus)
+
+    return menuDatas
   };
+
+  // 权限菜单判断处理
+  handleMenuAuth = async (authUrl, sysId) => {
+    const { menus } = this.props;
+    let menuDatas = []
+    // 本地缓存的菜单数据
+    let localMenus = JSON.parse(localStorage.getItem("menu"))
+    // 间隔时间标识
+    let sign = this.isOverDuration()
+    if (!localMenus || sign == true) {
+      let swtich = await this.getAuthSwitch(authUrl)
+      menuDatas = swtich ? await this.getAuthMenu(authUrl, sysId) : menus
+      return menuDatas
+    }
+    return localMenus
+  }
+
+
+  // 间隔时间判断
+  isOverDuration = () => {
+    let menuTime = localStorage.getItem("nowTime") //缓存存放的时间戳
+    let nowTime = new Date().getTime()      //当前时间戳
+    let intervalTime = (nowTime - menuTime) / 1000   //时间差
+    if (!menuTime || intervalTime >= duration) {      //改为5分钟请求一次
+      return true
+    }
+    return false
+  }
+
+  // 获取开关
+  getAuthSwitch = async (authUrl) => {
+    let res = false;
+    res = await Fetch(`${authUrl}/graphql`, {
+      headers: { Authorization: "Bearer " + localStorage.getItem("jwtToken") }
+    })
+      .query(
+        `
+        {
+          auth {
+            GetTheSwitchAuth {
+              result
+            }
+          }
+        }
+        `
+      )
+      .then(res => {
+        const { data: { auth: { GetTheSwitchAuth: { result } } } } = res
+        let authSwitch = result == "success" ? true : false
+        localStorage.setItem("authSwitch", authSwitch)
+        return authSwitch
+      })
+      .catch(e => {
+        res = Boolean(localStorage.getItem("authSwitch"))
+        return res ? res : false
+      });
+    return res
+  };
+
+  // 获取权限菜单
+  getAuthMenu = async (authUrl, sysId) => {
+    let menu = [];
+    menu = await Fetch(`${authUrl}/graphql`, {
+      headers: { Authorization: "Bearer " + localStorage.getItem("jwtToken") }
+    })
+      .query(
+        `
+        {
+          auth {
+            GetUserAuthInDifferentSystem(sysId:${sysId}) {
+              id
+              menuName
+              menuRouter
+              iconType
+              parent
+            }
+          }
+        }
+        `
+      )
+      .then(res => {
+        const { data: { auth: { GetUserAuthInDifferentSystem } } } = res
+        let tempMenus = GetUserAuthInDifferentSystem
+        let userMenus = []
+        for (const item of tempMenus) {
+          let menuInfo = {
+            id: item.id,
+            name: item.menuName,
+            to: item.menuRouter,
+            key: item.menuRouter,
+            parent: item.parent,
+            iconType: item.iconType,
+          }
+          userMenus.push(menuInfo)
+        }
+        userMenus = this.tranMenu(userMenus)  //平铺数据转树形结构
+        localStorage.setItem("menu", JSON.stringify(userMenus))
+        localStorage.setItem("nowTime", new Date().getTime())
+        return userMenus
+      })
+      .catch(e => {
+        let menu = JSON.parse(localStorage.getItem("menu"))
+        return menu ? menu : this.props.menus
+      });
+    return menu
+  }
+
+  // 菜单数据转二级菜单的显示方式
+  tranMenu = (data) => {
+    let result = []
+    let map = {};
+
+    data.forEach(item => {
+      map[item.id] = item;
+    });
+
+    data.forEach(item => {
+      let parent = map[item.parent];
+      if (parent) {
+        (parent.subs || (parent.subs = [])).push(item);   //判断父节点下表的数据是否存在，不存在则说明自己是父节点，push进result数组，否则说明自己是子节点，push进parent的children里
+      } else {
+        result.push(item)
+      }
+    });
+
+    // 按照id排序
+    result.sort((val1, val2) => {
+      return val1.id - val2.id
+    })
+    return result
+  }
 
   // 获取导航所需的平台链接数据
   getAppLinks = (value = "") => {
@@ -336,7 +486,7 @@ export class FrameLayout extends React.Component {
     let res = [];
     if (appObj) {
       const allApps = (apps || getLocalStorage("apps")).authed || [];
-      res = allApps.filter((item) => item.cname.indexOf(value) >= 0);
+      res = allApps.filter(item => item.cname.indexOf(value) >= 0);
     }
     return res;
   };
@@ -365,7 +515,7 @@ export class FrameLayout extends React.Component {
   /**
    * 获得去除参数信息后的菜单对象（例如：/a/b/:id）
    */
-  getRouteWithNoNumber = (pathname) => {
+  getRouteWithNoNumber = pathname => {
     const pathnameCopy = pathname;
 
     const res = pathnameCopy.replace(/(\/\d+)|#/g, "");
@@ -376,7 +526,7 @@ export class FrameLayout extends React.Component {
   /**
    * 获得路由，有可能会带参数（例如：/a/b/:id）
    */
-  getRealRoute = (pathname) => {
+  getRealRoute = pathname => {
     const pathnameCopy = pathname;
 
     const res = pathnameCopy.replace(/#/g, "");
@@ -384,7 +534,7 @@ export class FrameLayout extends React.Component {
     return res;
   };
 
-  setDocumentTitle = (selectedMenuName) => {
+  setDocumentTitle = selectedMenuName => {
     document.title = this.props.appName + "-" + selectedMenuName;
   };
 
@@ -400,24 +550,24 @@ export class FrameLayout extends React.Component {
   /**
    * 获取 openKey
    */
-  getOpenKeyBySelectedMenu = (selectedMenu) => {
-    const parentMenu = this.searchParentMenu(selectedMenu, this.menus);
+  getOpenKeyBySelectedMenu = selectedMenu => {
+    const parentMenu = this.searchParentMenu(selectedMenu, this.state.menus);
     return parentMenu ? parentMenu.key : selectedMenu.key;
   };
 
   /**
    * 获取 当前菜单
    */
-  getSelectMenu = (route) => {
+  getSelectMenu = route => {
     let selectedMenu;
     // 默认路径如果为／，则设置第一个叶子菜单为默认路由
     if (!route || route === "/") {
-      const firstChildMenu = this.getFlattenMenus(this.menus[0])[0];
+      const firstChildMenu = this.getFlattenMenus(this.state.menus[0])[0];
       this.log("初始route为空，找到的menu是", firstChildMenu);
       selectedMenu = firstChildMenu;
     } else {
       // 用户手动输入一个路由
-      let menu = this.searchMenuByPath(this.menus, route);
+      let menu = this.searchMenuByPath(this.state.menus, route);
       //TODO: 如果用户输入的是父级组件，当前没有处理这种情况
       this.log("初始route不为空，找到的menu是", menu);
       if (!!menu) {
@@ -433,13 +583,13 @@ export class FrameLayout extends React.Component {
   };
 
   // 设置平台的过滤值
-  searchApps = (e) => {
+  searchApps = e => {
     this.setState({ inputSearchValue: e.target.value });
   };
 
   handleInputConfirm = () => {
     this.setState({
-      displaySearchApp: false,
+      displaySearchApp: false
     });
   };
 
@@ -478,10 +628,10 @@ export class FrameLayout extends React.Component {
               onPressEnter={this.handleInputConfirm}
             />
           ) : (
-            React.createElement(AllIcons["SearchOutlined"], {
-              onClick: this.showSearch,
-            })
-          )}
+              React.createElement(AllIcons["SearchOutlined"], {
+                onClick: this.showSearch
+              })
+            )}
         </span>
       </div>
     );
@@ -517,14 +667,14 @@ export class FrameLayout extends React.Component {
         placement = "bottomLeft";
         handleArea = React.createElement(AllIcons["LinkOutlined"], {
           onClick: this.showSearch,
-          className: "frame-btn-icon",
+          className: "frame-btn-icon"
         });
         break;
       case "sider":
         placement = "rightTop";
         handleArea = React.createElement(AllIcons["LinkOutlined"], {
           onClick: this.showSearch,
-          className: "frame-btn-icon",
+          className: "frame-btn-icon"
         });
         break;
       default:
@@ -591,10 +741,9 @@ export class FrameLayout extends React.Component {
           {React.createElement(AllIcons["LogoutOutlined"], {
             className: "frame-btn-icon",
             style: {
-              display: `${
-                localStorage.getItem("cname") ? "inline-block" : "none"
-              }`,
-            },
+              display: `${localStorage.getItem("cname") ? "inline-block" : "none"
+                }`
+            }
           })}
         </Popconfirm>
       </span>
@@ -609,7 +758,7 @@ export class FrameLayout extends React.Component {
         title={
           <div>
             <p>以下是开发人员的联系方式</p>
-            {contactors.map((item) => (
+            {contactors.map(item => (
               <div style={{ marginTop: 12 }} key={item.name}>
                 {React.createElement(AllIcons["UserOutlined"], {})}
                 {item.name}
@@ -649,10 +798,10 @@ export class FrameLayout extends React.Component {
         <h1>{appName}</h1>
       </div>
     ) : (
-      <div className="logo-only-name">
-        <div className="app-name">{appName}</div>
-      </div>
-    );
+        <div className="logo-only-name">
+          <div className="app-name">{appName}</div>
+        </div>
+      );
   };
 
   // TODO：收缩后点击别的父级菜单下的菜单，展开后还是原来的，要更新！！！
@@ -671,15 +820,15 @@ export class FrameLayout extends React.Component {
     setLocalStorage("openKey", storageOpenKey);
     this.setState({
       collapsed,
-      openKeys: [curOpenKey],
+      openKeys: [curOpenKey]
     });
   };
 
   // 将所有菜单平铺
-  getFlattenMenus = (menu) => {
+  getFlattenMenus = menu => {
     let res = [];
-    if (!!menu.subs && menu.subs.length > 0) {
-      menu.subs.forEach((sub) => {
+    if (menu && !!menu.subs && menu.subs.length > 0) {
+      menu.subs.forEach(sub => {
         res = [...res, ...this.getFlattenMenus(sub)];
       });
     } else {
@@ -691,9 +840,9 @@ export class FrameLayout extends React.Component {
   // 获取某个菜单的最上级菜单
   searchParentMenu = (menu, menus = []) => {
     let res = [];
-    menus.find((item) => {
+    menu && menus.find(item => {
       const childMenus = this.getFlattenMenus(item);
-      if (childMenus.some((child) => child.to === menu.to)) {
+      if (childMenus.some(child => child.to === menu.to)) {
         res.push(item);
         return true;
       }
@@ -705,7 +854,7 @@ export class FrameLayout extends React.Component {
   // 根据 路径名过滤出菜单
   searchMenuByPath = (allMenus, pathName) => {
     let res;
-    allMenus.find((menu) => {
+    allMenus.find(menu => {
       if (menu.to === pathName) {
         res = menu;
         return true;
@@ -726,7 +875,7 @@ export class FrameLayout extends React.Component {
   /**
    * 修正菜单路径：确保都只以一个 '/' 开头
    */
-  correctMenuPath = (menuHashPath) => {
+  correctMenuPath = menuHashPath => {
     let menuPathCopy = menuHashPath.replace("#", "");
     if (!/(^\/{1})+(?!\/)/.test(menuPathCopy)) {
       menuPathCopy = menuPathCopy.replace(/\/+/, "/");
@@ -741,7 +890,7 @@ export class FrameLayout extends React.Component {
   correctMenus = (allMenus = []) => {
     return (
       allMenus.length > 0 &&
-      allMenus.map((menu) => {
+      allMenus.map(menu => {
         menu.to = this.correctMenuPath(menu.to);
         menu.key = menu.to;
 
@@ -779,6 +928,9 @@ FrameLayout.propTypes = {
   onLogout: PropTypes.func, // 处理登出逻辑
   myHistory: PropTypes.object, // 自定义 history 对象
   allowExpandMultiMenus: PropTypes.bool,
+  openAuth: PropTypes.bool,  //是否接入权限
+  authUrl: PropTypes.string, //权限请求的url
+  sysId: PropTypes.number //所属系统id
 };
 FrameLayout.defaultProps = {
   mode: "sider+header",
@@ -796,12 +948,15 @@ FrameLayout.defaultProps = {
       "resources",
       "name",
       "JWT_TOKEN",
-      "MENU_INFO",
+      "MENU_INFO"
     ];
-    clearItems.forEach((item) => {
+    clearItems.forEach(item => {
       window.localStorage.removeItem(item);
     });
     window.location.assign(domain + "/account/user/logout");
   },
   allowExpandMultiMenus: false,
+  openAuth: false,
+  sysId: 0,
+
 };

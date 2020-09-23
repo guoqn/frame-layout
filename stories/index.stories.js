@@ -84,6 +84,9 @@ storiesOf("布局", module).add(
       needFooter={boolean("needFooter", false)}
       needFullScreen={boolean("needFullScreen", false)}
       menus={object("menus", siderMenuConfig)}
+      openAuth={boolean("openAuth", false)}
+      authUrl={text("authUrl", "https://aegis-config-api-dev.k8s.bs58i.baishancdnx.com")}
+      sysId={number("sysId", 4)}
     >
       <div style={{ height: 1200, width: "100%" }}>
         <Switch>

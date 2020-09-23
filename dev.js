@@ -70,6 +70,9 @@ ReactDOM.render(
       needFooter={boolean("needFooter", false)}
       needFullScreen={boolean("needFullScreen", false)}
       menus={object("menus", siderMenuConfig)}
+      openAuth={boolean("openAuth", true)}
+      authUrl={text("authUrl", "https://aegis-config-api-dev.k8s.bs58i.baishancdnx.com")}
+      sysId={number("sysId", 1)}
     >
       <div style={{ height: 1200, width: "100%" }}>
         <Switch>

@@ -76,4 +76,12 @@ function (domain) {
 #### 1.0.2
 > 2020.09.22
 > - 修改readme
+
+#### 1.1.3
+> 2020.09.23
+> - zeus-frame-layout接入菜单权限 并修改readme
+
+
+
  -->
+
